@@ -9,7 +9,7 @@ from Products.CMFCore.permissions import ListFolderContents, \
 from Products.CMFCore import permissions
 from Products.Archetypes.public import *
 from Products.Archetypes.references import HoldingReference
-from Products.ATExtensions.ateapi import DateTimeField, DateTimeWidget
+from bika.lims.browser.widgets import DateTimeWidget
 from Products.CMFPlone.utils import safe_unicode
 from bika.lims.content.bikaschema import BikaSchema
 from bika.lims.config import ManageBika, PROJECTNAME
@@ -75,11 +75,24 @@ schema = BikaSchema.copy() + Schema((
         ),
     ),
     ReferenceField('Contact',
-        vocabulary = 'getContacts',
-        vocabulary_display_path_bound = sys.maxint,
         allowed_types = ('Contact',),
-        referenceClass = HoldingReference,
         relationship = 'ARImportContact',
+        default_method = 'getContactUIDForUser',
+        referenceClass = HoldingReference,
+        vocabulary_display_path_bound = sys.maxint,
+        widget=ReferenceWidget(
+            label=_("Contact"),
+            render_own_label=True,
+            size=12,
+            helper_js=("bika_widgets/referencewidget.js", "++resource++bika.lims.js/contact.js"),
+            visible={'edit': 'visible', 'view': 'visible', 'add': 'visible'},
+            base_query={'inactive_state': 'active'},
+            showOn=True,
+            popup_width='300px',
+            colModel=[{'columnName': 'UID', 'hidden': True},
+                      {'columnName': 'Fullname', 'width': '100', 'label': _('Name')},
+                     ],
+        ),
     ),
     StringField('ClientEmail',
         widget = StringWidget(
@@ -87,11 +100,23 @@ schema = BikaSchema.copy() + Schema((
         ),
     ),
     ReferenceField('CCContact',
-        vocabulary = 'getContacts',
-        vocabulary_display_path_bound = sys.maxint,
         allowed_types = ('Contact',),
-        referenceClass = HoldingReference,
         relationship = 'ARImportCCContact',
+        default_method = 'getContactUIDForUser',
+        referenceClass = HoldingReference,
+        widget=ReferenceWidget(
+            label=_("Contact"),
+            render_own_label=True,
+            size=12,
+            helper_js=("bika_widgets/referencewidget.js", "++resource++bika.lims.js/contact.js"),
+            visible={'edit': 'visible', 'view': 'visible', 'add': 'visible'},
+            base_query={'inactive_state': 'active'},
+            showOn=True,
+            popup_width='300px',
+            colModel=[{'columnName': 'UID', 'hidden': True},
+                      {'columnName': 'Fullname', 'width': '100', 'label': _('Name')},
+                     ],
+        ),
     ),
     StringField('CCEmails',
         widget = StringWidget(
@@ -123,14 +148,19 @@ schema = BikaSchema.copy() + Schema((
     ),
     DateTimeField('DateImported',
         required = 1,
-        default_method = 'current_date',
         widget = DateTimeWidget(
-            label = _("Date"),
+            label = _("Date Imported"),
+            size=12,
+            visible={'edit': 'visible', 'view': 'visible', 'add': 'visible',
+                     'secondary': 'invisible'},
         ),
     ),
     DateTimeField('DateApplied',
         widget = DateTimeWidget(
-            label = _("Date"),
+            label = _("Date Applied"),
+            size=12,
+            visible={'edit': 'visible', 'view': 'visible', 'add': 'visible',
+                     'secondary': 'invisible'},
         ),
     ),
     IntegerField('NumberSamples',
@@ -469,6 +499,20 @@ class ARImport(BaseFolder):
         self.setDateApplied(DateTime())
         self.reindexObject()
         REQUEST.RESPONSE.write('<script>document.location.href="%s?portal_status_message=%s%%20submitted"</script>' % (self.absolute_url(), self.getId()))
+
+    security.declarePublic('getContactUIDForUser')
+    def getContactUIDForUser(self):
+        """ get the UID of the contact associated with the authenticated
+            user
+        """
+        user = self.REQUEST.AUTHENTICATED_USER
+        user_id = user.getUserName()
+        r = self.portal_catalog(
+            portal_type = 'Contact',
+            getUsername = user_id
+        )
+        if len(r) == 1:
+            return r[0].UID
 
 
 atapi.registerType(ARImport, PROJECTNAME)

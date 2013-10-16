@@ -433,3 +433,8 @@ class ISetupDataImporter(Interface):
     """ISetupDataImporter adapters are responsible for importing sections of
     the load_setup_data xlsx workbooks.
     """
+
+class IARImport(Interface):
+
+    "Marker interface for an ARImport"
+
