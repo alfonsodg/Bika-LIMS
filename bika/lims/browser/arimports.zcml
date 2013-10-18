@@ -7,8 +7,16 @@
 
     <browser:page
       for="bika.lims.interfaces.IARImport"
-      name="base_view"
-      class="bika.lims.browser.arimports.ARImportsView"
+      name="arimport_view"
+      class="bika.lims.browser.arimports.ARImportView"
+      permission="bika.lims.ManageARImport"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IARImport"
+      name="arimport_views"
+      template="templates/arimport_views.pt"
       permission="bika.lims.ManageARImport"
       layer="bika.lims.interfaces.IBikaLIMS"
     />

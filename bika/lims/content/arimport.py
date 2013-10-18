@@ -1,19 +1,19 @@
 import sys
-from Products.ATContentTypes.content import schemata
-from Products.Archetypes import atapi
-from DateTime import DateTime
-from AccessControl import ClassSecurityInfo
-from Products.CMFCore.utils import getToolByName
-from Products.CMFCore.permissions import ListFolderContents, \
-    ModifyPortalContent, View
-from Products.CMFCore import permissions
-from Products.Archetypes.public import *
-from Products.Archetypes.references import HoldingReference
+from bika.lims import bikaMessageFactory as _
 from bika.lims.browser.widgets import DateTimeWidget
-from Products.CMFPlone.utils import safe_unicode
 from bika.lims.content.bikaschema import BikaSchema
 from bika.lims.config import ManageBika, PROJECTNAME
-from bika.lims import bikaMessageFactory as _
+from bika.lims.interfaces import IARImport
+from AccessControl import ClassSecurityInfo
+from DateTime import DateTime
+from Products.Archetypes import atapi
+from Products.Archetypes.public import *
+from Products.Archetypes.references import HoldingReference
+from Products.ATContentTypes.content import schemata
+from Products.CMFCore import permissions
+from Products.CMFCore.utils import getToolByName
+from Products.CMFPlone.utils import safe_unicode
+from zope.interface import implements
 
 schema = BikaSchema.copy() + Schema((
     StringField('ImportOption',
@@ -199,6 +199,7 @@ class ARImport(BaseFolder):
     security = ClassSecurityInfo()
     schema = schema
     displayContentsTab = False
+    implements (IARImport)
 
     def Title(self):
         """ Return the id as title """

@@ -1,33 +1,37 @@
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
-      lang="en"
+<html xmlns="http://www.w3.org/1999/xhtml" 
+      xml:lang="en"
       xmlns:tal="http://xml.zope.org/namespaces/tal"
       xmlns:metal="http://xml.zope.org/namespaces/metal"
       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="here/main_template/macros/master"
       i18n:domain="bika">
 
-<head><title></title></head>
+<head>
+    <metal:block fill-slot="javascript_head_slot">
+        <script type="text/javascript"
+            tal:attributes="src string:++resource++bika.lims.js/arimport.js"></script>
+    </metal:block>
+</head>
 
 <body>
 
-<metal:body_macro metal:define-macro="body">
+<div metal:fill-slot="main">
 
-<script type="text/javascript" src="utils.js"></script>
-<br/>
 
-kkkkkkkkkkkkkk
-<div tal:condition="python:view.getImportOption() not in ['s', 'p']">
-<metal:block use-macro="here/arimport_views/macros/arimport_view_c"/>
+    <div tal:condition="python:view.getImportOption() not in ['s', 'p']">
+        <metal:block use-macro="context/arimport_views/macros/arimport_view_c"/>
+    </div>
+<!--
+    <div tal:condition="python:view.getImportOption() == 's'">
+        <metal:block use-macro="here/arimport_views/macros/arimport_view_s"/>
+    </div>
+
+    <div tal:condition="python:view.getImportOption() == 'p'">
+        <metal:block use-macro="here/arimport_views/macros/arimport_view_p"/>
+    </div>
+-->
+
 </div>
-
-<div tal:condition="python:view.getImportOption() == 's'">
-<metal:block use-macro="here/arimport_views/macros/arimport_view_s"/>
-</div>
-
-<div tal:condition="python:view.getImportOption() == 'p'">
-<metal:block use-macro="here/arimport_views/macros/arimport_view_p"/>
-</div>
-
-</metal:body_macro>
 
 </body>
 

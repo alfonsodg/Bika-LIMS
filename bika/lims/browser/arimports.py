@@ -2,10 +2,12 @@ import csv
 from DateTime import DateTime
 from Products.CMFCore.utils import getToolByName
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from Products.statusmessages.interfaces import IStatusMessage
 from bika.lims import PMF, logger, bikaMessageFactory as _
 from bika.lims.browser import BrowserView
 from bika.lims.browser.bika_listing import BikaListingView
 from bika.lims.permissions import *
+from bika.lims.interfaces import IARImport
 from bika.lims.utils import tmpID
 from plone.app.layout.globals.interfaces import IViewView
 from zope.interface import implements
@@ -13,13 +15,30 @@ import plone
 import zope.event
 
 
-class ARImportsView(BrowserView):
+class ARImportView(BrowserView):
     implements(IViewView)
     template = ViewPageTemplateFile('templates/arimport_view.pt')
 
+    #def __init__(self, context, request):
+    #    super(ARImportView, self).__init__(context, request)
+
+    def __call__(self):
+        return self.template()
+
     def getImportOption(self):
-        import pdb; pdb.set_trace()
         return self.context.getImportOption()
+
+    def getDateImported(self):
+        dt = self.context.getDateImported()
+        if dt:
+            plone_view = self.context.restrictedTraverse('@@plone')
+            return plone_view.toLocalizedTime(dt, long_format=1)
+
+    def getDateApplied(self):
+        dt = self.context.getDateApplied()
+        if dt:
+            plone_view = self.context.restrictedTraverse('@@plone')
+            return plone_view.toLocalizedTime(dt, long_format=1)
 
 class ClientARImportsView(BikaListingView):
     implements(IViewView)
@@ -27,8 +46,11 @@ class ClientARImportsView(BikaListingView):
     def __init__(self, context, request):
         super(ClientARImportsView, self).__init__(context, request)
         self.catalog = "portal_catalog"
-        self.contentFilter = {'portal_type': 'ARImport',
-                              'sort_on':'sortable_title'}
+        self.contentFilter = {
+                'portal_type': 'ARImport',
+                'path': {'query': '/'.join(self.context.getPhysicalPath())},
+                'sort_on':'sortable_title',
+                }
         self.context_actions = \
                 {_('AR Import'):
                            {'url': 'arimport_add',
@@ -121,11 +143,18 @@ class ClientARImportAddView(BrowserView):
             csvfile = form.get('csvfile')
             option = form.get('ImportOption')
             client_id = form.get('ClientID')
+            valid = False
             if option == 'c':
-                self.import_file_c(csvfile, client_id)
+                arimport, msg = self.import_file_c(csvfile, client_id)
             elif option == 's':
-                self.import_file_s(csvfile, client_id)
-
+                arimport, msg = self.import_file_s(csvfile, client_id)
+            if arimport:
+                print 'Redirect to %s' % arimport.absolute_url()
+                msg = "AR Import complete"
+                IStatusMessage(self.request).addStatusMessage(_(msg), "info")
+                self.request.response.redirect(arimport.absolute_url())
+                return 
+            return False
         return self.template()
 
     def import_file_c(self, csvfile, client_id):
@@ -141,7 +170,7 @@ class ClientARImportAddView(BrowserView):
         r = self.portal_catalog(portal_type='Client', id=client_id)
         if len(r) == 0:
             log.append('   Could not find Client %s' % client_id)
-            return '\n'.join(log)
+            return None, '\n'.join(log)
         client = r[0].getObject()
         wf_tool = getToolByName(self, 'portal_workflow')
         updateable_states = ['sample_received', 'assigned']
@@ -163,7 +192,7 @@ class ClientARImportAddView(BrowserView):
                 else:
                     msg = '%s invalid batch header' % row
                     transaction_note(msg)
-                    return state.set(status='failure', portal_status_message=msg)
+                    return None, msg
             if row_count == 2:
                 msg = None
                 if row[1] != 'Import':
@@ -179,7 +208,7 @@ class ClientARImportAddView(BrowserView):
                 if entered_name.lower() != actual_name.lower():
                     msg = 'Actual filename, %s, does not match entered filename, %s' %(actual_name, row[2])
                     transaction_note(msg)
-                    return state.set(status='failure', portal_status_message=msg)
+                    return None, msg
                 
                 batch_headers = row[0:]
                 arimport_id = tmpID()
@@ -201,16 +230,16 @@ class ClientARImportAddView(BrowserView):
         
         pad = 8192*' '
         request = self.request
-        #request.RESPONSE.write(self.progress_bar(request=request))
-        request.RESPONSE.write('<input style="display: none;" id="progressType" value="Analysis request import">')
-        request.RESPONSE.write('<input style="display: none;" id="progressDone" value="Validating...">')
-        request.RESPONSE.write(pad+'<input style="display: none;" id="inputTotal" value="%s">' % len(samples))
+        #request.response.write(self.progress_bar(request=request))
+        #request.response.write('<input style="display: none;" id="progressType" value="Analysis request import">')
+        #request.response.write('<input style="display: none;" id="progressDone" value="Validating...">')
+        #request.response.write(pad+'<input style="display: none;" id="inputTotal" value="%s">' % len(samples))
 
         row_count = 0
         for sample in samples:
             next_num = tmpID()
             row_count = row_count + 1
-            request.RESPONSE.write(pad+'<input style="display: none;" name="inputProgress" value="%s">' % row_count)
+            #request.response.write(pad+'<input style="display: none;" name="inputProgress" value="%s">' % row_count)
             item_remarks = []
             analyses = []
             for i in range(9, len(sample)):
@@ -251,7 +280,8 @@ class ClientARImportAddView(BrowserView):
             )
 
         valid = self.validate_arimport_c(arimport)
-        request.RESPONSE.write('<script>document.location.href="%s/client_arimports?portal_status_message=%s%%20imported"</script>' % (client.absolute_url(), arimport_id))
+        #request.response.write('<script>document.location.href="%s/client_arimports?portal_status_message=%s%%20imported"</script>' % (client.absolute_url(), arimport_id))
+        return arimport, msg
 
     def validate_arimport_c(self, arimport):
         context = self.context
@@ -484,16 +514,16 @@ class ClientARImportAddView(BrowserView):
                 samples.append(row)
         
         pad = 8192*' '
-        request = self.request
-        #request.RESPONSE.write(self.progress_bar(request=request))
-        request.RESPONSE.write('<input style="display: none;" id="progressType" value="Analysis request import">')
-        request.RESPONSE.write('<input style="display: none;" id="progressDone" value="Validating...">')
-        request.RESPONSE.write(pad+'<input style="display: none;" id="inputTotal" value="%s">' % len(samples))
+        #request = self.request
+        #request.response.write(self.progress_bar(request=request))
+        #request.response.write('<input style="display: none;" id="progressType" value="Analysis request import">')
+        #request.response.write('<input style="display: none;" id="progressDone" value="Validating...">')
+        #request.response.write(pad+'<input style="display: none;" id="inputTotal" value="%s">' % len(samples))
 
         row_count = 0
         for sample in samples:
             row_count = row_count + 1
-            request.RESPONSE.write(pad+'<input style="display: none;" name="inputProgress" value="%s">' % row_count)
+            #request.response.write(pad+'<input style="display: none;" name="inputProgress" value="%s">' % row_count)
 
             profiles = []
             for profile in sample[6:8]:
@@ -538,6 +568,6 @@ class ClientARImportAddView(BrowserView):
             )
 
         valid = self.validate_arimport_s(arimport)
-        request.RESPONSE.write('<script>document.location.href="%s/client_arimports?portal_status_message=%s%%20imported"</script>' % (client.absolute_url(), arimport_id))
+        #request.response.write('<script>document.location.href="%s/client_arimports?portal_status_message=%s%%20imported"</script>' % (client.absolute_url(), arimport_id))
 
 
