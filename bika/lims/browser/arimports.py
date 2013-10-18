@@ -137,7 +137,8 @@ class ClientARImportAddView(BrowserView):
     template = ViewPageTemplateFile('templates/arimport_add_form.pt')
 
     def __call__(self):
-        form = self.request.form
+        request = self.request
+        form = request.form
         plone.protect.CheckAuthenticator(form)
         if form.get('submitted'): 
             csvfile = form.get('csvfile')
@@ -149,39 +150,32 @@ class ClientARImportAddView(BrowserView):
             elif option == 's':
                 arimport, msg = self.import_file_s(csvfile, client_id)
             if arimport:
-                print 'Redirect to %s' % arimport.absolute_url()
                 msg = "AR Import complete"
-                IStatusMessage(self.request).addStatusMessage(_(msg), "info")
-                self.request.response.redirect(arimport.absolute_url())
+                IStatusMessage(request).addStatusMessage(_(msg), "info")
+                request.response.redirect(arimport.absolute_url())
                 return 
             return False
         return self.template()
 
     def import_file_c(self, csvfile, client_id):
-        filename = csvfile.filename
-        slash = filename.rfind('\\')
-        full_name = filename[slash+1:]
-        ext = full_name.rfind('.')
-        if ext == -1:
-            actual_name = full_name
-        else:
-            actual_name = full_name[:ext]
+        fullfilename = csvfile.filename
+        fullfilename = fullfilename.split('/')[-1]
+        filename = fullfilename.split('.')[0]
         log = []
         r = self.portal_catalog(portal_type='Client', id=client_id)
         if len(r) == 0:
+            #This is not a user input issue - client_id is added to template
             log.append('   Could not find Client %s' % client_id)
             return None, '\n'.join(log)
+
         client = r[0].getObject()
-        wf_tool = getToolByName(self, 'portal_workflow')
         updateable_states = ['sample_received', 'assigned']
         reader = csv.reader(csvfile.readlines())
         samples = []
         sample_headers = None
         batch_headers = None
-        row_count = 0
-        sample_count = 0
         batch_remarks = []
-
+        row_count = 0
         for row in reader:
             row_count = row_count + 1
             if not row: continue
@@ -193,43 +187,40 @@ class ClientARImportAddView(BrowserView):
                     msg = '%s invalid batch header' % row
                     transaction_note(msg)
                     return None, msg
-            if row_count == 2:
+            elif row_count == 2:
                 msg = None
                 if row[1] != 'Import':
                     msg = 'Invalid batch header - Import required in cell B2'
                     transaction_note(msg)
-                    return state.set(status='failure', portal_status_message=msg)
-                full_name = row[2]
-                ext = full_name.rfind('.')
-                if ext == -1:
-                    entered_name = full_name
-                else:
-                    entered_name = full_name[:ext]
-                if entered_name.lower() != actual_name.lower():
-                    msg = 'Actual filename, %s, does not match entered filename, %s' %(actual_name, row[2])
+                    return None, msg
+                entered_name = fullfilename.split('.')[0]
+                if entered_name.lower() != filename.lower():
+                    msg = 'Filename, %s, does not match entered filename, %s' \
+                            % (filename, row[2])
                     transaction_note(msg)
                     return None, msg
                 
                 batch_headers = row[0:]
                 arimport_id = tmpID()
-                client.invokeFactory(id=arimport_id, type_name='ARImport')
+                title = filename
+                idx = 1
+                while title in [i.Title() for i in client.objectValues()]:
+                    title = '%s-%s' % (filename, idx)
+                    idx += 1
+                client.invokeFactory(
+                        id=arimport_id, type_name='ARImport', title=title)
                 arimport = client._getOb(arimport_id)
                 continue
-            if row_count == 3:
-                sample_count = sample_count + 1
+            elif row_count == 3:
                 sample_headers = row[9:]
                 continue
-            if row_count == 4:
-                continue
-            if row_count == 5:
-                continue
-            if row_count == 6:
+            elif row_count in [4,5,6]:
                 continue
 
+            #otherwise add to list of sample
             samples.append(row)
-        
+
         pad = 8192*' '
-        request = self.request
         #request.response.write(self.progress_bar(request=request))
         #request.response.write('<input style="display: none;" id="progressType" value="Analysis request import">')
         #request.response.write('<input style="display: none;" id="progressDone" value="Validating...">')
@@ -253,11 +244,10 @@ class ClientARImportAddView(BrowserView):
                 aritem.edit(
                     SampleName=sample[0],
                     ClientRef=sample[1],
-                    ClientSid=sample[2],
-                    SampleDate=sample[3],
-                    SampleType = sample[4],
-                    PickingSlip = sample[5],
-                    ReportDryMatter = sample[6],
+                    SampleDate=sample[2],
+                    SampleType = sample[3],
+                    PickingSlip = sample[4],
+                    ReportDryMatter = sample[5],
                     )
             
                 aritem.setRemarks(item_remarks)
@@ -266,14 +256,13 @@ class ClientARImportAddView(BrowserView):
         arimport.edit(
             ImportOption='c',
             FileName=batch_headers[2],
-            ClientName = batch_headers[3],
+            ClientTitle = batch_headers[3],
             ClientID = batch_headers[4],
             ContactID = batch_headers[5],
             CCContactID = batch_headers[6],
-            CCEmails = batch_headers[7],
-            OrderID = batch_headers[8],
-            QuoteID = batch_headers[9],
-            SamplePoint = batch_headers[10],
+            OrderID = batch_headers[7],
+            QuoteID = batch_headers[8],
+            SamplePoint = batch_headers[9],
             Remarks = batch_remarks, 
             Analyses = sample_headers, 
             DateImported=DateTime(),
@@ -289,22 +278,28 @@ class ClientARImportAddView(BrowserView):
         client = arimport.aq_parent
         batch_remarks = []
         valid_batch = True
-        order_id = arimport.getOrderID()
         uid = arimport.UID()
-        batches = context.portal_catalog(portal_type='ARImport', 
-                    getClientUID = client.UID(),
-                    getOrderID=order_id)
-        for batch in batches:
-            if batch.UID == uid:
+        batches = context.portal_catalog({
+                    'portal_type': 'ARImport', 
+                    'path': {'query': '/'.join(self.context.getPhysicalPath())},
+                    })
+        for brain in batches:
+            if brain.UID == uid:
                 continue
-            oldbatch = batch.getObject()
-            if oldbatch.getStatus():
+            batch = brain.getObject()
+            if batch.getOrderID() != arimport.getOrderID():
+                continue
+            if batch.getStatus():
                 # then a previous valid batch exists
-                batch_remarks.append('\n' + 'Duplicate order')
+                batch_remarks.append(
+                    '\n' + 'Duplicate order %s' % arimport.getOrderID())
+                valid_batch = False
+                break
 
         # validate client
         if arimport.getClientID() != client.getClientID():
-            batch_remarks.append('\n' + 'Client ID should be %s' %client.getClientID())
+            batch_remarks.append(
+                '\n' + 'Client ID should be %s' %client.getClientID())
             valid_batch = False
 
         # validate contact
@@ -314,12 +309,12 @@ class ClientARImportAddView(BrowserView):
         if arimport.getContact():
             contact_found = True
         else:
-            contact_uname = arimport.getContactID()
+            contactid = arimport.getContactID()
             for contact in client.objectValues('Contact'):
-                if contact.getUsername() == contact_uname:
+                if contact.getUsername() == contactid:
                     arimport.edit(Contact=contact)
                     contact_found = True
-                    break
+                    #break
 
         if arimport.getCCContact():
             cc_contact_found = True
@@ -351,17 +346,22 @@ class ClientARImportAddView(BrowserView):
             if len(r) == 0:
                 batch_remarks.append('\n' + 'New Sample point will be added')
 
-        sampletypes = [p.Title for p in context.portal_catalog(portal_type="SampleType")]
+        sampletypes = \
+            [p.Title for p in context.portal_catalog(portal_type="SampleType")]
         service_keys = []
         dependant_services = {}
 
-        #TODO
-        #for s in context.portal_catalog(portal_type="AnalysisService"):
-        #    service = s.getObject()
-        #    service_keys.append(service.getAnalysisKey())
-        #    if service.getCalcType() == 'dep':
-        #        dependant_services[service.getAnalysisKey()] = service
-
+        bsc = getToolByName(context, 'bika_setup_catalog')
+        services = bsc(portal_type = "AnalysisService",
+                       inactive_state = 'active')
+        for brain in services:
+            service = brain.getObject()
+            service_keys.append(service.getKeyword())
+            calc = service.getCalculation()
+            if calc:
+                dependencies = calc.getDependentServices()
+                if dependencies:
+                    dependant_services[service.getKeyword()] = dependencies
         aritems = arimport.objectValues('ARImportItem')
         for aritem in aritems:
             item_remarks = []
@@ -388,9 +388,8 @@ class ClientARImportAddView(BrowserView):
                 # validate analysis dependancies
                 reqd_analyses = []
                 if dependant_services.has_key(analysis):
-                    this_analysis = dependant_services[analysis]
-                    required = context.get_analysis_dependancies(this_analysis)
-                    reqd_analyses = required['keys']
+                    reqd_analyses = \
+                        [s.getKeyword() for s in dependant_services[analysis]]
                 reqd_titles = ''
                 for reqd in reqd_analyses:
                     if (reqd not in analyses):
@@ -441,7 +440,6 @@ class ClientARImportAddView(BrowserView):
             log.append('   Could not find Client %s' % client_id)
             return '\n'.join(log)
         client = r[0].getObject()
-        wf_tool = getToolByName(self, 'portal_workflow')
         reader = csv.reader(csvfile)
         samples = []
         sample_headers = None
@@ -552,7 +550,7 @@ class ClientARImportAddView(BrowserView):
 
         arimport.edit(
             ImportOption='s',
-            ClientName = clientname,
+            ClientTitle = clientname,
             ClientID = client_id,
             ClientPhone = clientphone,
             ClientFax = clientfax,

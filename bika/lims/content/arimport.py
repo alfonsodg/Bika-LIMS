@@ -201,9 +201,9 @@ class ARImport(BaseFolder):
     displayContentsTab = False
     implements (IARImport)
 
-    def Title(self):
-        """ Return the id as title """
-        return safe_unicode(self.getId()).encode('utf-8')
+    #def Title(self):
+    #    """ Return the id as title """
+    #    return safe_unicode(self.getId()).encode('utf-8')
 
     security.declarePublic('current_date')
     def current_date(self):
