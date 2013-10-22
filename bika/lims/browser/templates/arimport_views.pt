@@ -294,21 +294,29 @@ coming attractions
             tal:repeat="aritem aritems">
         <tr>
         <td class="left"
+            tal:condition="python:review_state != 'submitted'"
             tal:content="aritem/getSampleName">Sample 1</td>
+        <!--
+        <td class="left"
+            tal:condition="python:review_state != 'submitted'">
+                <a tal:attributes="href aritem/absolute_url | nothing"
+                   tal:content="aritem/Title | nothing">AR-001</a>
+        </td>
+        -->
         <tal:submitted
             tal:define="ar aritem/getAnalysisRequest;
                         sample aritem/getSample| nothing"
             tal:condition="python:review_state == 'submitted'">
-        <td class="left">
-        <a tal:attributes="href ar/absolute_url | nothing"
-           tal:content="ar/Title | nothing">AR-001</a>
-        <a href="" 
-            tal:attributes="href sample/absolute_url">
-        <img src="" 
-            alt="Sample"
-            tal:attributes="src string:${portal/absolute_url}/sample_small.png">
-        </a>
-        </td>
+            <td class="left">
+                <a tal:attributes="href ar/absolute_url | nothing"
+                   tal:content="ar/Title | nothing">AR-001</a>
+                <a href="" 
+                    tal:attributes="href sample/absolute_url">
+                <img src="" 
+                    alt="Sample"
+                    tal:attributes="src string:${portal/absolute_url}/sample_small.png">
+                </a>
+            </td>
         </tal:submitted>
         <td tal:content="aritem/getClientRef">R1</td>
         <td tal:content="aritem/getClientSid">S1</td>
