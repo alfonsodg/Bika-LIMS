@@ -107,6 +107,13 @@
         handler="bika.lims.subscribers.batch.BeforeTransitionEventHandler"
     />
             
+    <!-- Workflow transition event for ARimport -->
+    <subscriber
+        for="bika.lims.interfaces.IARImport
+            Products.DCWorkflow.interfaces.IAfterTransitionEvent"
+        handler="bika.lims.subscribers.arimport.AfterTransitionEventHandler"
+    />
+            
 
 
 </configure>

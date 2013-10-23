@@ -130,6 +130,9 @@ class ClientARImportsView(BikaListingView):
         for state in states:
             toggles.append(state)
         return toggles
+    
+    def getAR(self):
+        import pdb; pdb.set_trace()
 
 
 class ClientARImportAddView(BrowserView):

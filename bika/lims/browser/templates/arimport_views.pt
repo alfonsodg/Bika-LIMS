@@ -277,7 +277,7 @@ coming attractions
         <th class="center" i18n:translate="label_samplename">Sample</th>
         <tal:submitted
             tal:condition="python:review_state == 'submitted'">
-        <th class="center" i18n:translate="label_requestid">Request ID</th>
+            <th class="center" i18n:translate="label_requestid">Request ID</th>
         </tal:submitted>
         <th class="center" i18n:translate="label_clientref">Client Ref</th>
         <th class="center" i18n:translate="label_clientsid">Client Sid</th>
@@ -294,27 +294,31 @@ coming attractions
             tal:repeat="aritem aritems">
         <tr>
         <td class="left"
-            tal:condition="python:review_state != 'submitted'"
-            tal:content="aritem/getSampleName">Sample 1</td>
-        <!--
+            tal:condition="python:review_state == 'submitted'">
+                <a tal:attributes="href aritem/absolute_url | nothing"
+                   tal:content="aritem/getSampleName | nothing">AR-001</a>
+        </td>
         <td class="left"
             tal:condition="python:review_state != 'submitted'">
                 <a tal:attributes="href aritem/absolute_url | nothing"
                    tal:content="aritem/Title | nothing">AR-001</a>
         </td>
-        -->
         <tal:submitted
             tal:define="ar aritem/getAnalysisRequest;
                         sample aritem/getSample| nothing"
             tal:condition="python:review_state == 'submitted'">
-            <td class="left">
+            <td class="left"
+                tal:condition="python:not ar"
+                tal:content="aritem/getSampleName">Sample 1</td>
+            <td class="left"
+                tal:condition="python:ar">
                 <a tal:attributes="href ar/absolute_url | nothing"
                    tal:content="ar/Title | nothing">AR-001</a>
                 <a href="" 
                     tal:attributes="href sample/absolute_url">
-                <img src="" 
-                    alt="Sample"
-                    tal:attributes="src string:${portal/absolute_url}/sample_small.png">
+                    <img src="" 
+                        alt="Sample"
+                        tal:attributes="src string:${view/portal_url}/++resource++bika.lims.images/sample_small.png">
                 </a>
             </td>
         </tal:submitted>
