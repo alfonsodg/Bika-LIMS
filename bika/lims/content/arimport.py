@@ -128,6 +128,16 @@ schema = BikaSchema.copy() + Schema((
             label = _("CC Emails"),
         ),
     ),
+    StringField('InvoiceContactID',
+        widget = StringWidget(
+            label = _("Invoice Contact ID"),
+        ),
+    ),
+    StringField('CCEmailInvoice',
+        widget = StringWidget(
+            label = _("CC Email Invoice"),
+        ),
+    ),
     StringField('OrderID',
         searchable = True,
         widget = StringWidget(

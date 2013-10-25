@@ -12,8 +12,8 @@
     tal:define="
         wtool context/portal_workflow;
         review_state python:wtool.getInfoFor(context, 'review_state', '');
-        left_col python:review_state == 'submitted' and 6 or 5;
-        right_col python:5">
+        left_col python:review_state == 'submitted' and 8 or 7;
+        right_col python:7">
     <table
         summary="ARImport view"
         class="arimport"
@@ -169,8 +169,8 @@
     tal:define="
         wtool context/portal_workflow;
         review_state python:wtool.getInfoFor(context, 'review_state', '');
-        left_col python:review_state == 'submitted' and 4 or 3;
-        right_col python:review_state == 'submitted' and 5 or 4">
+        left_col python:review_state == 'submitted' and 6 or 5;
+        right_col python:review_state == 'submitted' and 7 or 6">
 <!--
 coming attractions
 -->
@@ -181,8 +181,8 @@ coming attractions
      tal:define="
         wtool context/portal_workflow;
         review_state python:wtool.getInfoFor(context, 'review_state', '');
-        left_col python:review_state == 'submitted' and 4 or 3;
-        right_col python:review_state == 'submitted' and 6 or 5">
+        left_col python:review_state == 'submitted' and 6 or 5;
+        right_col python:review_state == 'submitted' and 8 or 7">
     <table
         summary="ARImport view"
         class="arimport"
@@ -202,73 +202,83 @@ coming attractions
                         global contact_found python:False;
                         cccontact context/getCCContact | nothing;
                         global cccontact_found python:False">
-        <tal:contact_found 
-            tal:condition="nocall:contact">
-        <th i18n:translate="label_contact">Contact</th>
-        <td class="left" tal:attributes="colspan python:left_col"
-            tal:define="global contact_found python:True"
-            tal:content="contact/Title">JonesJJ</td>
-        </tal:contact_found>
-        <tal:contact_not_found 
-            tal:condition="not:contact_found">
-        <th i18n:translate="label_contactid">Contact ID</th>
-        <td class="left" tal:attributes="colspan python:left_col"
-            tal:content="context/getContactID">JonesJJ</td>
-        </tal:contact_not_found>
-        <tal:cccontact_found tal:condition="nocall:cccontact">
-        <th i18n:translate="label_cc">CC</th>
-        <td class="left" tal:attributes="colspan python:right_col"
-            tal:define="global cccontact_found python:True"
-            tal:content="cccontact/Title">jonesba</td>
-        </tal:cccontact_found>
-        <tal:cccontact_not_found 
-            tal:condition="not:cccontact_found">
-        <th i18n:translate="label_cccontactid">CCContact ID</th>
-        <td class="left" tal:attributes="colspan python:right_col"
-            tal:content="context/getCCContactID">JonesJJ</td>
-        </tal:cccontact_not_found>
+            <tal:contact_found 
+                tal:condition="nocall:contact">
+            <th i18n:translate="label_contact">Contact</th>
+            <td class="left" tal:attributes="colspan python:left_col"
+                tal:define="global contact_found python:True"
+                tal:content="contact/Title">JonesJJ</td>
+            </tal:contact_found>
+            <tal:contact_not_found 
+                tal:condition="not:contact_found">
+            <th i18n:translate="label_contactid">Contact ID</th>
+            <td class="left" tal:attributes="colspan python:left_col"
+                tal:content="context/getContactID">JonesJJ</td>
+            </tal:contact_not_found>
+            <tal:cccontact_found tal:condition="nocall:cccontact">
+            <th i18n:translate="label_cc">CC</th>
+            <td class="left" tal:attributes="colspan python:right_col"
+                tal:define="global cccontact_found python:True"
+                tal:content="cccontact/Title">jonesba</td>
+            </tal:cccontact_found>
+            <tal:cccontact_not_found 
+                tal:condition="not:cccontact_found">
+            <th i18n:translate="label_cccontactid">CCContact ID</th>
+            <td class="left" tal:attributes="colspan python:right_col"
+                tal:content="context/getCCContactID">JonesJJ</td>
+            </tal:cccontact_not_found>
         </tr>
 
         <tr>
-        <th i18n:translate="label_ccemails">CC Emails</th>
-        <td class="left" tal:attributes="colspan python:left_col" 
-            tal:content="context/getCCEmails">x@y.com</td>
-        <th i18n:translate="label_samplepoint">Sample Point</th>
-        <td class="left"  tal:attributes="colspan python:right_col"
-            tal:content="context/getSamplePoint">This sample point</td>
+            <th i18n:translate="label_ccemails">CC Emails</th>
+            <td class="left" tal:attributes="colspan python:left_col" 
+                tal:content="context/getCCEmails">x@y.com</td>
+            <th i18n:translate="label_samplepoint">Sample Point</th>
+            <td class="left"  tal:attributes="colspan python:right_col"
+                tal:content="context/getSamplePoint">This sample point</td>
         </tr>
 
         <tr>
-        <th i18n:translate="label_OrderID">Order</th>
-        <td class="left"  tal:attributes="colspan python:left_col"
-            tal:content="context/getOrderID">123</td>
-        <th i18n:translate="label_QuoteID">Quote</th>
-        <td class="left"  tal:attributes="colspan python:right_col"
-            tal:content="context/getQuoteID">123</td>
+            <th i18n:translate="label_InvoiceContactID">Invoice Contact ID</th>
+            <td class="left"  tal:attributes="colspan python:left_col"
+                tal:content="context/getInvoiceContactID">Mike</td>
+            <th i18n:translate="label_CCEmailInvoice">CC Email Invoice</th>
+            <td class="left"  tal:attributes="colspan python:right_col"
+                tal:content="context/getCCEmailInvoice">123</td>
         </tr>
+
         <tr>
-        <th i18n:translate="label_filename">File name</th>
-        <td class="left" tal:attributes="colspan python:left_col" 
-            tal:content="context/getFileName">file.csv</td>
-        <th i18n:translate="label_status">Status</th>
-        <td class="left"  tal:attributes="colspan python:right_col"
-            tal:define="status python:context.getStatus() and 'Valid' or 'Invalid'"
-            tal:content="status">Valid</td>
+            <th i18n:translate="label_OrderID">Order</th>
+            <td class="left"  tal:attributes="colspan python:left_col"
+                tal:content="context/getOrderID">123</td>
+            <th i18n:translate="label_QuoteID">Quote</th>
+            <td class="left"  tal:attributes="colspan python:right_col"
+                tal:content="context/getQuoteID">123</td>
+        </tr>
+
+        <tr>
+            <th i18n:translate="label_filename">File name</th>
+            <td class="left" tal:attributes="colspan python:left_col" 
+                tal:content="context/getFileName">file.csv</td>
+            <th i18n:translate="label_status">Status</th>
+            <td class="left"  tal:attributes="colspan python:right_col"
+                tal:define="status python:context.getStatus() and 'Valid' or 'Invalid'"
+                tal:content="status">Valid</td>
         </tr>
 
         <tr tal:define="date_applied view/getDateApplied">
-        <th i18n:translate="label_dateimported">Date imported</th>
-        <td class="left"  tal:attributes="colspan python:left_col"
-            tal:content="view/getDateImported">2005-01-01 10:00</td>
-        <th> 
-        <span i18n:translate="label_dateapplied"
-            tal:condition="date_applied">Date applied</span>
-        </th>
-        <td class="left"
-            tal:attributes="colspan python:right_col">
-        <span tal:condition="date_applied"
-            tal:content="date_applied" >2005-01-01 10:00</span>
-        </td>
+            <th i18n:translate="label_dateimported">Date imported</th>
+            <td class="left"  tal:attributes="colspan python:left_col"
+                tal:content="view/getDateImported">2005-01-01 10:00</td>
+            <th> 
+            <span i18n:translate="label_dateapplied"
+                tal:condition="date_applied">Date applied</span>
+            </th>
+            <td class="left"
+                tal:attributes="colspan python:right_col">
+            <span tal:condition="date_applied"
+                tal:content="date_applied" >2005-01-01 10:00</span>
+            </td>
         </tr>
 
         </thead>
@@ -284,7 +294,9 @@ coming attractions
         <th class="center" i18n:translate="label_sampledate">Sample Date</th>
         <th class="center" i18n:translate="label_sampletype">Sample type</th>
         <th class="center" i18n:translate="label_pickingslip">Picking slip</th>
+        <th class="center" i18n:translate="label_containertype">Container Type</th>
         <th class="center" i18n:translate="label_report_dry_matter">Report as DM</th>
+        <th class="center" i18n:translate="label_priority">Priority</th>
         <th class="center" i18n:translate="label_orderid">Order ID</th>
         <th class="center" i18n:translate="label_analyses">Analyses</th>
         <th class="center" i18n:translate="label_valid">Valid</th>
@@ -327,7 +339,9 @@ coming attractions
         <td tal:content="aritem/getSampleDate">Sampledate</td>
         <td tal:content="aritem/getSampleType">SampleType</td>
         <td tal:content="aritem/getPickingSlip">PickingSlip</td>
+        <td tal:content="aritem/getContainerType">PickingSlip</td>
         <td tal:content="aritem/getReportDryMatter">ReportDM</td>
+        <td tal:content="aritem/getPriority">ReportDM</td>
         <td tal:content="aritem/getOrderID">OrderID</td>
         <td>
         <a  onMouseover=""

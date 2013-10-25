@@ -181,7 +181,8 @@ class ClientARImportAddView(BrowserView):
         row_count = 0
         for row in reader:
             row_count = row_count + 1
-            if not row: continue
+            if not row: 
+                continue
             # a new batch starts
             if row_count == 1:
                 if row[0] == 'Header':
@@ -224,10 +225,11 @@ class ClientARImportAddView(BrowserView):
             samples.append(row)
 
         pad = 8192*' '
+        request = self.request
         #request.response.write(self.progress_bar(request=request))
         #request.response.write('<input style="display: none;" id="progressType" value="Analysis request import">')
-        #request.response.write('<input style="display: none;" id="progressDone" value="Validating...">')
-        #request.response.write(pad+'<input style="display: none;" id="inputTotal" value="%s">' % len(samples))
+        #request.response.write('<input style="display: block;" id="progressDone" value="Validating...">')
+        #request.response.write(pad+'<input style="display: block;" id="inputTotal" value="%s">' % len(samples))
 
         row_count = 0
         for sample in samples:
@@ -250,7 +252,9 @@ class ClientARImportAddView(BrowserView):
                     SampleDate=sample[2],
                     SampleType = sample[3],
                     PickingSlip = sample[4],
-                    ReportDryMatter = sample[5],
+                    ContainerType = sample[5],
+                    ReportDryMatter = sample[6],
+                    Priority = sample[7],
                     )
             
                 aritem.setRemarks(item_remarks)
@@ -263,9 +267,11 @@ class ClientARImportAddView(BrowserView):
             ClientID = batch_headers[4],
             ContactID = batch_headers[5],
             CCContactID = batch_headers[6],
-            OrderID = batch_headers[7],
-            QuoteID = batch_headers[8],
-            SamplePoint = batch_headers[9],
+            InvoiceContactID = batch_headers[7],
+            CCEmailInvoice = batch_headers[8],
+            OrderID = batch_headers[9],
+            QuoteID = batch_headers[10],
+            SamplePoint = batch_headers[11],
             Remarks = batch_remarks, 
             Analyses = sample_headers, 
             DateImported=DateTime(),

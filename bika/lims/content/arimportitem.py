@@ -51,9 +51,19 @@ schema = BikaSchema.copy() + Schema((
             label = _("Picking Slip"),
         )
     ),
+    StringField('ContainerType',
+        widget = StringWidget(
+            label = _("Container Type"),
+        )
+    ),
     StringField('ReportDryMatter',
         widget = StringWidget(
             label = _("Report as Dry Matter"),
+        )
+    ),
+    StringField('Priority',
+        widget = StringWidget(
+            label = _("Priority"),
         )
     ),
     LinesField('AnalysisProfile',

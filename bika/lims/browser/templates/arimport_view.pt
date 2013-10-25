@@ -9,7 +9,8 @@
 <head>
     <metal:block fill-slot="javascript_head_slot">
         <script type="text/javascript"
-            tal:attributes="src string:++resource++bika.lims.js/arimport.js"></script>
+            tal:attributes="src string:++resource++bika.lims.js/arimport.js">
+        </script>
     </metal:block>
 </head>
 
